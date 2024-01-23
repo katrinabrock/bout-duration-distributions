@@ -167,7 +167,7 @@ def generate_illustration_at_crucial_error():
     
     # > BROCK OPT
     # You're using two different patterns with this and the function below.
-    # In the main function (below), you have the simulations module write the
+    # In the main function (below), you have the module write the
     # data and simulate.py plot it.
     # 
     # Here the simulation module itself is doing the plotting.
