@@ -21,10 +21,17 @@ from . import parameter_space
 from .simulator import Simulator
 from . import mixed_exponentials
 
+# > BROCK OPT
+# Why not use a logger?
+# < 
 if not config.SUPPRESS_INFORMATIVE_PRINT:
     old_print = print
     print = utilities.sprint
 
+# > BROCK OPT
+# Seems like the arg "sim_count" is more like sim id or sim index
+# count sounds like a total or a sum
+# <
 # The below function will be run in parallel many times
 def _simulate_and_get_results(sim_count, ft_params, bd_distributions, epoch, fit_results, fit_results_spec):
 
@@ -46,6 +53,13 @@ def _simulate_and_get_results(sim_count, ft_params, bd_distributions, epoch, fit
         recs = recs[["datetime", "state"]]
         recs["state"] = classifications
 
+        # BROCK OPT >
+        # Looks like this is a placeholder species. 
+        # maybe call it "placeholder" or "simulated species"
+        # to make it clear that it's just a label and not impacting
+        # the logic inside the function.
+        # In the line after...what was the bug? I'm very curious
+        # <
         predicted_bouts = boutparsing.as_bouts(recs, "meerkat") # "meerkat" used only as a stand-in, since the code needs it on the data-processing side but not here
         predicted_bouts = predicted_bouts[predicted_bouts["duration"] >= config.xmin] # What a nasty well-hidden bug! Fixed 24.07.2023
         pred_fits = fitting.fits_to_all_states(predicted_bouts)
@@ -128,6 +142,10 @@ def generate_illustration_at_crucial_error():
     This is useful for a figure in our paper, but is not generally
     applicable at this stage.
     """
+    # > BROCK OPT
+    # A lot of the code here is duplciated with the function below.
+    # Could they not call a shared function to avoid this?
+    # <
     parameter_space = parameter_space.parameter_values(
         sconfig.ERRORS_PARAMETER_SPACE_BEGIN,
         sconfig.ERRORS_PARAMETER_SPACE_END,
@@ -146,6 +164,23 @@ def generate_illustration_at_crucial_error():
         for (mean_a, mean_b) in parameter_space]
 
     vals = ft_params[5] # spurious detection of exponential as tpl
+    
+    # > BROCK OPT
+    # You're using two different patterns with this and the function below.
+    # In the main function (below), you have the simulations module write the
+    # data and simulate.py plot it.
+    # 
+    # Here the simulation module itself is doing the plotting.
+    # 
+    # My preferred pattern would be to have one module that generates the
+    # data  (this simulate module), a seperate one that takes in the data and 
+    # generates the plot (maybe a plot_sim_results module).
+    # Then the launch script (simulate.py) calls these two in sequence and 
+    # the data to be plotted is passed as python objects instead of being 
+    # written and read. It's a summary, no? so small enough to be passed in this way.
+    # (Maybe write to disk as a backup/fallback if you're afraid of interuptions.)
+    #
+    # <
 
     fig, ax = plt.subplots()
     _helper_func_for_specific_case(ft_params, bd_distributions, epoch, fig, ax)
@@ -158,6 +193,9 @@ def simulate_with_distribution(distribution_name):
     prone classifiers, and performs fits on the resulting data.
     """
 
+    # > BROCK OPT
+    # Consider passing the configs into the function in some form or fashion.
+    # <
     parameter_space = parameter_space.parameter_values(
         sconfig.ERRORS_PARAMETER_SPACE_BEGIN,
         sconfig.ERRORS_PARAMETER_SPACE_END,

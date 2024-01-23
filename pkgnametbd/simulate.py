@@ -1,3 +1,5 @@
+#! /usr/bin/env python 
+
 # Pranav Minasandra
 # pminasandra.github.io
 # been a while, forgot the day. couple weeks before 24 Sep 2023
@@ -38,11 +40,21 @@ simulations.simulate_with_distribution("Power_Law")
 
 fig, ax = plt.subplots()
 
+# > BROCK OPT
+# Probably this should go above the simulations and get
+# passed throught to parameter_space.py to ensure
+# that axis settings are in sync with how data was generated
+# <
 error_rates = np.linspace(
     simulations.sconfig.ERRORS_PARAMETER_SPACE_BEGIN,
     simulations.sconfig.ERRORS_PARAMETER_SPACE_END,
     simulations.sconfig.ERRORS_PARAMETER_SPACE_NUM
 )/2
+
+# > BROCK OPT
+# could be more DRY...
+# for dist in ["Exponential", "Power Law"]:
+# <
 
 heavy_tails_exp = np.loadtxt(os.path.join(config.DATA, "simulation_Exponential_heavy_tails.npout"))
 
