@@ -49,6 +49,10 @@ def _simulate_and_get_results(sim_count, ft_params, bd_distributions, epoch, fit
     for i in range(simulator.num_features):
         print(sim_count, ":", i)
         classifications = classifier.bayes_classify(simulator.records[f"feature{i}"])
+        # BROCK OPT >
+        # It looks like you are copying a datatable here and then throwing away 
+        # all except one column of it. There is probably a more efficient thing to do here.
+        # <
         recs = simulator.records.copy()
         recs = recs[["datetime", "state"]]
         recs["state"] = classifications
@@ -69,10 +73,18 @@ def _simulate_and_get_results(sim_count, ft_params, bd_distributions, epoch, fit
             bouts = predicted_bouts[predicted_bouts["state"] == state]
             bouts = bouts["duration"]
             pred_dist_name, pred_dist = fitting.choose_best_distribution(fit, bouts)
+            # BROCK OPT >
+            # Why not save the actual predicted dist and params for each sim? (e.g. as pickle)
+            # you're only doing 200 iterations, so not that much storage to save more metadata
+            # even if you don't want to save entire input dataset
+            # <
             if pred_dist_name in ["Power_Law", "Truncated_Power_Law"]:# is it scale-free?
                 num_heavy_tails[i] += 1
                 if pred_dist.alpha < 2.0:# is it scale-free with fun params?
                     num_heavy_tails_param_range[i] += 1
+    # BROCK REQ >
+    # Why are we dividing by 2 here? can you at least add a comment to explain?
+    # <
 
     for nres in range(simulator.num_features):
         num_heavy_tails[nres] /= 2.0
@@ -84,6 +96,10 @@ def _simulate_and_get_results(sim_count, ft_params, bd_distributions, epoch, fit
 
     print("Simulation #", sim_count, "will now exit.")
     return None
+    # BROCK OPT >
+    # I don't think the below code actually runs because it's after
+    # the return statement.
+    # <
     # The mp.Pool() object has absolute garbage garbage collection
     # Deleting all data manually here
     del predicted_bouts
