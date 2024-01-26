@@ -162,6 +162,11 @@ def generate_illustration_at_crucial_error():
     # A lot of the code here is duplciated with the function below.
     # Could they not call a shared function to avoid this?
     # <
+    # > BROCK OPT
+    # Here you are giving your variable the same name as the module.
+    # This is bad practice because it prevents you from being able to use
+    # that module anymore, and it creates confusion.
+    # <
     parameter_space = parameter_space.parameter_values(
         sconfig.ERRORS_PARAMETER_SPACE_BEGIN,
         sconfig.ERRORS_PARAMETER_SPACE_END,

@@ -3,9 +3,10 @@
 
 ## Code Quality
 
+Here, I don't expect you to make any changes to the code (unless you are doing a huge refactor for other reason), this feedback is more to keep in mind the next time you embark on a similar project.
+
 ### Optimize for Readability
 
-Here, I don't expect you to make any changes to the code (unless you are doing a huge refactor for other reason), this feedback is more to keep in mind the next time you embark on a similar project.
 
 In my mind, optimizing for readability would mean having the processes in the code mirror as closely as possible how researchers conceptualize the real proccess both in name and structure. It seems like there are a few processes you're simulating here:
 1) generating the ground truth behavioral sequences from some process/distribution,
@@ -74,6 +75,20 @@ The point is to make functions/components named based on the real processes the 
 Break implementation complexity into those components, then push it inside these readably named functions and objects. 
 This will let you more easily iterate on each piece independently and also make the flow of data and execution flow more clear to the reader.
 For example, when you're tyring to illustrate your specific case, the main thing you're trying to do explore a smaller parameter spece with more granularity in step 2 for one value of step 1, but because the logic is all mixed together between generating the parameter space, and executing the different steps, you had to copy a lot of the code and tweak it here and there instead of changing the in puts and reusing code. (You were able to reuse the some code where parts your were not changing were encapusated.)
+
+### Optimizing for Performance
+
+You would have to do some actual profiling to validate this,
+but I think you make this much more performant by leveraging np/pandas operations more so that your loops get moved from python to c. 
+The only part that I think cannot really be done with math-like numpy/pandas is step 4. Steps 1-3 I suspect you can do all with clever dataframe operations.
+Especially converting back and forth between an array of bout lengths and an array of discrete states. You shouldn't need a while loop to do that.
+It should be possible to create a couple of performant lower-level functions that take care for those operations with minimal python looping.
+
+Also, as previously mentioned, you are doing way more random number generation than required and random number generation tends to be expensive. Even if you're not doing a fully analytical solution, think about where you *actually* need randomness/simulation vs where you just run an operation on a discretized PDF or CDF.
+
+### Readability/Performance Tradeoff
+
+A script of pandas/numpy operations is not readable. Doing a for loop or list comprehension (even essentially for loop farmed out to mp) is generally a bit more readable that a matrix-operation-like statement so there is a bit of a tradeoff here. A practical approach is probably to focus on readability for the design and sequencing of high level functions and performance for lower level functions. (To do this, each function that you create needs to be in a specific place on this heirachy, not mixing high level and low level elements.) Somewhere in the middle, these values will bump up against each other.
     
     
 ## Conceptual/Design Feedback
@@ -89,12 +104,39 @@ Here's my list:
 * Distribution is the same for both states
 * Error rate is the same for both states
 
+### Does the fact that this is a sequence of multiple bouts even matter?
+
+Part of what makes this simulation neccessary/hard to do with math is the interaction between errors at the boundary between bouts. e.g. if the last timepoint of an A bout is misclassified as a B timepoint it both makes the A bout appear shorter and the adjacent B bout appear longer. But I'm wondering...is this effect even big enough to be relevant? If the bouts are sufficiently long relative to length of a timepoint (epoch?) and error rate suffciently low, then this definitely have only a neglible impact. In that case, you wouldn't need to generate behavioral "sequences" at all. You would just need to generate distributions of bout lengths with and without error. Lining them up into a sequence with bouts of other states would be a unnecessary exercise. 
+
+Of course, if the data is sufficiently high grain releative to the bout length or error rate sufficiently high, the impact of misclassication on the end of one bout "extending" the adjacent bout would have an impact.
+
+Have you thought about this? Do you have some evidence that we are in the second case within the parameter space you're exploring?
+
+Of course, lining the bouts up next to each other isn't going to hurt...it just makes the simulation unnecessarily complex. It if you save the records from your simulation, it should be possible to empircally evaluate which case we're in. Might be worth checking.
+
+### Normal dist isn't doing anything
+Conceptually, with your two state simulation if you isolate the process of going form a discretized sequence that represents true behaviors to a descritized sequence that represents observed/inferred behaviors (e.g. AAAAABBBBB -> AABAABABBB), the only relevant parameters are P(Bobs|Atrue) and P(Aobs|Btrue) which, in practice, you've set to be the same value. You have encoded these two paramters, and explained them in an unnecessarily complex way. What you describe in the paper and implement in the code is something like calulating muA of a normal distribution such that cnorm(0, muA, 1) = P(Bobs|A), then sample from this distribution, then collapse it back down by just checking whether the sample is < 0. This process could be simplified by just doing a weighted coinflip of P(Bobs|A) to convert between true and observed/inferred sequence without a mediating variable/feature. This would simplify both your code and your text. Because these two processes are equivalent, I recommend at least simplifying your text even if you don't want to take the time to revise and rerun your code.
+
+### Analysis Suggestion - Empirical Comparison of Dist with and w/o Error
+
+Before jumping to running a model to infer the distribution of bout lengths with error, it might be useful to directly compare your the (synthetic) true bout lenghths and your bout lengths with err. ei generate and empirical/discrete PDF (ie histogram) and CDF of each overlay them. You can see directly to what extent bout lengths are shortened.
+
 
 ## Clarifications
 
-
-# Smaller Issues
+* How is the claim that error impacting inferred distribution implies super long bouts supported?
 
 ## Must Check
 
-## Other
+There are two bugs discovered from testing (so far):
+
+* the state -> current_state bug we discussed on mattermost
+* simulator seems to just break if epoch is not set to 1
+
+Right now, there are `skip` decorators on thes tests that reveal these issues. You can remove that decorator and run pytest to see the errors. 
+
+In addition to those, there is a mysterious deviding by 2 in `simulate/__init__.py` that I think should at least be explained.
+
+All the other comments are more like suggestions optional to address.
+
+
