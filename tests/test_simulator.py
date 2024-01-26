@@ -1,9 +1,7 @@
 import pytest
-from pytest_mock import mocker
 
 import numpy as np
 
-import pkgnametbd.simulations.simulator
 from pkgnametbd.simulations.simulator import Simulator
 
 class MockDist:
