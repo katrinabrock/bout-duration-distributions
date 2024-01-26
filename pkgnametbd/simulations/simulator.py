@@ -18,6 +18,15 @@ from . import sconfig
 
 if not config.SUPPRESS_INFORMATIVE_PRINT:
     print = utilities.sprint
+    
+# BROCK OPT >
+# Since this object has only one method and you are only running that 
+# method once per instantiation, making this an object/class doens't seem to
+# be adding much over a simple function that returns records.
+#
+# In fact, it's a bit counterintuitive (to me at least) that run() merely sets
+# s.records and does not return anything.
+# <
 
 class Simulator:
     """
@@ -54,8 +63,23 @@ class Simulator:
             for ft_needed in ft_params:
                 assert type(ft_needed) == dict
             self.multiple_features = True
+            # BROCK OPT >
+            # This attribute is a bit of a misnomer in that
+            # if you a list with one element
+            # then multiple features will be set to true when, in fact
+            # there is only one feature.
+            #
+            # It appears that both cases are still handled correctly.
+            # Seems to add unecessary complexity though to accept 
+            # either a list of objects or the object itself.
+            #
+            # Why not just force the caller to put their one element inside a list?
+            # <
             self.num_features = len(ft_params)
 
+        # BROCK OPT >
+        # Since you only handle two states, you may want to assert
+        # len(bd_distributions) = True
         for state in bd_distributions:
             assert bd_distributions[state].generate_random
 
@@ -87,6 +111,7 @@ class Simulator:
         current_time = 0
         i = 0
         while i < num_bouts and current_time < sconfig.MAX_REC_TIME:
+            current_state = states[i % 2]
             # BROCK OPT > 
             # It looks like you are generating twice as many bout values
             # as you are using. If I'm understanding correctly, you're
@@ -96,7 +121,17 @@ class Simulator:
             # intensive parts of simulations so probably not great to do
             # so needlessly. (If that's what's going on.)
             # <
-            current_state = states[i % 2]
+            # BROCK REQ >
+            # There is a bug here where you are using state instead of
+            # current_state. state is a value left over from the for 
+            # loop a few lines above. At this point, it will always 
+            # be set to B because it is not changed within this loop.
+            # This means you are never using the bout values that you generated
+            # for state A. I don't think this an issue for the paper
+            # combining the fact that you are using the same dist for A and B
+            # with the issue in the comment above, you are using and not reusing
+            # random values from same distribution.
+            # <
             current_bout = int(bout_values[state][i])
             if current_time + current_bout > sconfig.MAX_REC_TIME:
                 current_bout = sconfig.MAX_REC_TIME - current_time
