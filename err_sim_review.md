@@ -1,5 +1,22 @@
-# Big Picture Topics
+# Review Status
 
+I have read and left comments on all the code in the simulations module that is used in the err simulation. All the comments below largely pertain to this simulation and may or may not apply to the others.
+
+I have written and run tests on the Simulator object. I've started writing tests for the functions in the `simulations/__init__.py` file, but those are not yet thorougly tested.
+
+Todo for me:
+
+* Finish testing code in `simulations/__init__.py` module (assuming no major refactor is planned)
+* Test code used in simulator.py itself
+* Read and comment on the other two simulations
+* Write tests for the code int he other two simulations
+
+Out of scope/not planned:
+* I don't plan to evaluate the code that zooms in on a particular part of the parameter space any more than I have already.
+* I am considering out of scope evaluating code outside of the simulations module and simulate.py even if that code is called by the simulations module. I will assume such code is working for the purposes of my tests.
+
+
+# Big Picture Topics
 
 ## Code Quality
 
@@ -89,6 +106,10 @@ Also, as previously mentioned, you are doing way more random number generation t
 ### Readability/Performance Tradeoff
 
 A script of pandas/numpy operations is not readable. Doing a for loop or list comprehension (even essentially for loop farmed out to mp) is generally a bit more readable that a matrix-operation-like statement so there is a bit of a tradeoff here. A practical approach is probably to focus on readability for the design and sequencing of high level functions and performance for lower level functions. (To do this, each function that you create needs to be in a specific place on this heirachy, not mixing high level and low level elements.) Somewhere in the middle, these values will bump up against each other.
+
+### Keep Labels/Metadata with Data
+
+There's several places where you pass around unlabeled lists and rely on the order to later apply a labeling. The most aggregious example of this is the `fit_results` and `fit_results_spec`. This is a list of lists. The ordering of the outer list doesn't matter, but the ordering of the inner list matters a *lot* as each element corresponds to as set of error params. It's very difficult to validate whether the ordering is properly preserved through each function and loop that generates these objects. Therefore, it's hard to develop confidence that how you've labeled the final graph actually corresponds to the parameters used to generate the data.
     
     
 ## Conceptual/Design Feedback
